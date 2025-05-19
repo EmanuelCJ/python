@@ -22,6 +22,7 @@ def recibir_datos():
         entradas = [id, serie, cantidad, descripcion, lugar]
 
         valido, mensaje = validar_entrada(entradas)
+        
         if not valido:
             messagebox.showerror("Error", mensaje)
             return
@@ -68,7 +69,8 @@ def guardar_datos():
         
         # Guardar el archivo de Excel
         libro.save("inventario.xlsx")
-        # Mostrar un mensaje de éxito  
+
+        # Muestrar un mensaje de éxito  
         messagebox.showinfo("Éxito", "Datos guardados correctamente.")
     else:
         messagebox.showerror("Error", "No se pudieron guardar los datos.")

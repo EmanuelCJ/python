@@ -1,15 +1,43 @@
+import os
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import ttk, messagebox, simpledialog
+import pandas as pd
+from pathlib import Path
 from openpyxl import Workbook
+import openpyxl
+from openpyxl.utils.exceptions import InvalidFileException
 
 #creammos un archivo de excel
 libro = Workbook()
 hoja = libro.active
-hoja.append(["ID", "N° Serie", "Cantidad", "Descripción", "Lugar"])
 
+archivo_excel = "inventario.xlsx"
 
-# Guardar el archivo de Excel
-# libro.save("inventario.xlsx")
+def inicializar_excel(archivo_excel):
+        # Verificar si el archivo existe
+        if not os.path.exists(archivo_excel):
+            # Crear un nuevo archivo Excel con las columnas necesarias
+            df = pd.DataFrame(columns=[
+                "ID", "Descripción", "Serie", 
+                "Observaciones", "Lugar", "Cantidad"
+            ])
+            df.to_excel(archivo_excel, index=False)
+            print(f"Archivo {archivo_excel} creado correctamente.")
+        else:
+            try:
+                # Verificar que el archivo es accesible y tiene el formato correcto
+                pd.read_excel(archivo_excel)
+                print(f"Archivo {archivo_excel} cargado correctamente.")
+            except (InvalidFileException, Exception) as e:
+                messagebox.showerror("Error", f"El archivo de inventario está dañado o no es accesible: {str(e)}")
+                # Crear un backup y un nuevo archivo
+                if os.path.exists(archivo_excel):
+                    os.rename(archivo_excel, f"{archivo_excel}.bak")
+                df = pd.DataFrame(columns=[
+                    "ID", "Descripción", "Serie", 
+                    "Observaciones", "Lugar", "Cantidad"
+                ])
+                df.to_excel(archivo_excel, index=False)
 
 def recibir_datos():
     try:
@@ -61,20 +89,51 @@ def validar_entrada(entrada):
 
 # Función para guardar los datos en el archivo de Excel
 def guardar_datos():
-    datos , estado = recibir_datos()
-    if datos:
-        id, serie, cantidad, descripcion, lugar = datos
-        # Agregar los datos a la hoja de Excel
-        hoja.append([id, serie, cantidad, descripcion, lugar])
-        
-        # Guardar el archivo de Excel
-        libro.save("inventario.xlsx")
 
-        # Muestrar un mensaje de éxito  
-        messagebox.showinfo("Éxito", "Datos guardados correctamente.")
+    # Recibir datos de las entradas
+    entradas, estado = recibir_datos()
+
+    if estado:
+        id, serie, cantidad, descripcion, lugar = entradas
+
+        # Crear DataFrame con los nuevos datos
+        nueva_fila = pd.DataFrame([{
+            "ID": id,
+            "Descripción": descripcion,
+            "Serie": serie,
+            "Observaciones": entry_obs.get(),
+            "Lugar": lugar,
+            "Cantidad": cantidad
+        }])
+
+        # Leer archivo actual
+        try:
+            df_existente = pd.read_excel(archivo_excel)
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudo leer el archivo: {str(e)}")
+            return
+
+        # Agregar nueva fila
+        df_actualizado = pd.concat([df_existente, nueva_fila], ignore_index=True)
+
+        # Guardar de nuevo en el archivo
+        try:
+            df_actualizado.to_excel(archivo_excel, index=False)
+            messagebox.showinfo("Éxito", "Datos guardados correctamente.")
+        except Exception as e:
+            messagebox.showerror("Error", f"No se pudieron guardar los datos: {str(e)}")
+            return
+
+        # Limpiar entradas
+        entry_id.delete(0, tk.END)
+        entry_serie.delete(0, tk.END)
+        entry_cantidad.delete(0, tk.END)
+        entry_obs.delete(0, tk.END)
+        entry_descripcion.delete(0, tk.END)
+        entry_lugar.delete(0, tk.END)
     else:
         messagebox.showerror("Error", "No se pudieron guardar los datos.")
-    
+
 def retirar_datos():
     pass
 def buscar_datos():
@@ -153,6 +212,8 @@ root.grid_columnconfigure(1, weight=1)
 root.grid_columnconfigure(2, weight=1)
 root.grid_columnconfigure(3, weight=1)
 
+# Inicializar el archivo de Excel
+inicializar_excel(archivo_excel)
 
 # sirve para que no se cierre la ventana
 root.mainloop()

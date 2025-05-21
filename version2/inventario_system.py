@@ -9,7 +9,7 @@ from openpyxl.utils.exceptions import InvalidFileException
 class InventarioApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Sistema de Inventario")
+        self.root.title("Inventario de sistemas")
         self.root.geometry("800x600")
         self.root.configure(bg="#f0f0f0")
         
@@ -18,9 +18,9 @@ class InventarioApp:
         self.inicializar_excel()
         
         # Variables para los campos
-        self.id_var = tk.StringVar()
-        self.descripcion_var = tk.StringVar()
-        self.serie_var = tk.StringVar()
+        self.id_var = tk.IntVar()
+        self.descripcion_var = tk.IntVar()
+        self.serie_var = tk.IntVar()
         self.observaciones_var = tk.StringVar()
         self.lugar_var = tk.StringVar()
         self.cantidad_var = tk.StringVar()
@@ -182,18 +182,25 @@ class InventarioApp:
             self.cantidad_var.set(valores[5])
     
     def validar_datos(self):
-        # Validar que los campos necesarios no estén vacíos
-        if not self.id_var.get().strip():
-            messagebox.showwarning("Advertencia", "El campo ID es obligatorio.")
+        
+        # Validar que no haya campos vacíos
+        if not self.id_var or not self.serie_var or not self.cantidad_var or not self.descripcion_var or not self.lugar_var:
+           messagebox.showwarning("Advertencia", "El campo Descripción es obligatorio.")
+           return False
+        
+        # Validar que ID, Serie y Cantidad sean enteros
+        if not isinstance(self.id_var, int) or not isinstance(self.serie_var, int) or not isinstance(self.cantidad_var, int):
+            messagebox.showwarning( f"ID ==>{self.id_var}, Serie ==>{self.serie_var} y Cantidad ==>{self.cantidad_var} deben ser números enteros.")
             return False
         
-        if not self.descripcion_var.get().strip():
-            messagebox.showwarning("Advertencia", "El campo Descripción es obligatorio.")
+        # Validar que Descripción y Lugar sean strings
+        if not isinstance(self.descripcion_var, str) or not isinstance(self.lugar_var, str):
+            messagebox.showwarning("Descripción y Lugar deben ser texto.")
             return False
         
         # Validar que la cantidad sea un número
         try:
-            cantidad = int(self.cantidad_var.get())
+            cantidad = self.cantidad_var.get()
             if cantidad < 0:
                 messagebox.showwarning("Advertencia", "La cantidad no puede ser negativa.")
                 return False

@@ -71,7 +71,7 @@ class InventarioApp:
         
         # Crear campos de entrada
         self.crear_campo(input_frame, "Descripción:", self.descripcion_var, 1)
-        self.crear_campo(input_frame, "No. Serie:", self.serie_var, 2)
+        self.crear_campo(input_frame, "N°. Serie:", self.serie_var, 2)
         self.crear_campo(input_frame, "Observaciones:", self.observaciones_var, 3)
         self.crear_campo(input_frame, "Lugar:", self.lugar_var, 4)
         self.crear_campo(input_frame, "Cantidad:", self.cantidad_var, 5)
@@ -80,7 +80,7 @@ class InventarioApp:
         input_frame = tk.LabelFrame(main_frame, text="Campo busqueda", bg="#f0f0f0", font=("Arial", 12))
         input_frame.pack(fill=tk.X, padx=10, pady=10)
 
-        self.crear_campo(input_frame, "buscar ID:", self.id_buscar_var, 0)
+        self.crear_campo(input_frame, "buscar por ID:", self.id_buscar_var, 0)
 
         # Frame para botones
         button_frame = tk.Frame(main_frame, bg="#f0f0f0")
@@ -143,9 +143,9 @@ class InventarioApp:
             text=texto, 
             command=comando, 
             bg=color, 
-            fg="white", 
+            fg="black", 
             font=("Arial", 10, "bold"),
-            width=12,
+            width=14,
             height=2,
             relief=tk.RAISED
         ).grid(row=0, column=columna, padx=5, pady=5)
@@ -159,6 +159,7 @@ class InventarioApp:
         self.cantidad_var.set("")
     
     def actualizar_tabla(self):
+
         # Limpiar tabla existente
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -199,15 +200,15 @@ class InventarioApp:
     def validar_datos(self):
         
         # Validar que no haya campos vacíos
-        if not self.serie_var or not self.cantidad_var or not self.descripcion_var or not self.lugar_var:
-           messagebox.showwarning("Advertencia", "El campo Descripción es obligatorio.")
+        if not self.serie_var or not self.cantidad_var or not self.descripcion_var.get().strip() or not self.lugar_var.get().strip():
+           messagebox.showwarning("Advertencia", "El campo los campos son obligatorios.")
            return False
         
         # Validar que ID, Serie y Cantidad sean enteros
         if not isinstance(self.serie_var.get(), int) or not isinstance(self.cantidad_var.get(), int):
             messagebox.showwarning( "Advertencia","Serie y Cantidad deben ser números enteros.")
             return False
-        
+
         # Validar que Descripción y Lugar sean strings
         if not isinstance(self.descripcion_var.get(), str) or not isinstance(self.lugar_var.get(), str):
             messagebox.showwarning("Descripción y Lugar deben ser texto.")
@@ -425,12 +426,6 @@ class InventarioApp:
         try:
             id_producto = self.id_buscar_var.get()
             
-            # Confirmación
-            confirmacion = messagebox.askyesno("Confirmar eliminación", 
-                                               f"¿Está seguro de eliminar el producto con ID {id_producto}?")
-            if not confirmacion:
-                return
-            
             # Cargar datos actuales
             tabla_excel = pd.read_excel(self.archivo_excel)
             
@@ -438,6 +433,13 @@ class InventarioApp:
             producto_existente = tabla_excel[tabla_excel["ID"] == id_producto]
             
             if len(producto_existente) > 0:
+
+                # Confirmación
+                confirmacion = messagebox.askyesno("Confirmar eliminación", 
+                                               f"¿Está seguro de eliminar el producto con ID {id_producto}?")
+                if not confirmacion:
+                    return
+
                 # Eliminar producto
                 tabla_excel = tabla_excel[tabla_excel["ID"] != id_producto]
                 
@@ -453,6 +455,7 @@ class InventarioApp:
         except Exception as e:
             messagebox.showerror("Error", f"Error al eliminar el producto: {str(e)}")
     
+    #esta funcion va a crear un archivo para los ids
     def compactar_hoja(self):
         try:
             # Cargar datos actuales

@@ -19,14 +19,11 @@ class InventarioApp:
         
         # Variables para los campos
         self.id_var = tk.IntVar()
-        self.descripcion_var = tk.StringVar()
-        self.serie_var = tk.StringVar()
+        self.descripcion_var = tk.IntVar()
+        self.serie_var = tk.IntVar()
         self.observaciones_var = tk.StringVar()
         self.lugar_var = tk.StringVar()
         self.cantidad_var = tk.StringVar()
-
-        # variables para campos de busqueda
-        self.id_buscar_var = tk.StringVar()
         
         # Crear interfaz
         self.crear_interfaz()
@@ -70,29 +67,24 @@ class InventarioApp:
         input_frame.pack(fill=tk.X, padx=10, pady=10)
         
         # Crear campos de entrada
+        self.crear_campo(input_frame, "ID:", self.id_var, 0)
         self.crear_campo(input_frame, "Descripción:", self.descripcion_var, 1)
-        self.crear_campo(input_frame, "N°. Serie:", self.serie_var, 2)
+        self.crear_campo(input_frame, "No. Serie:", self.serie_var, 2)
         self.crear_campo(input_frame, "Observaciones:", self.observaciones_var, 3)
         self.crear_campo(input_frame, "Lugar:", self.lugar_var, 4)
         self.crear_campo(input_frame, "Cantidad:", self.cantidad_var, 5)
         
-         # Frame para los campos de busqueda
-        input_frame = tk.LabelFrame(main_frame, text="Campo busqueda", bg="#f0f0f0", font=("Arial", 12))
-        input_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        self.crear_campo(input_frame, "buscar por ID:", self.id_buscar_var, 0)
-
         # Frame para botones
         button_frame = tk.Frame(main_frame, bg="#f0f0f0")
         button_frame.pack(fill=tk.X, padx=10, pady=10)
         
         # Botones de acción
-        self.crear_boton(button_frame, "Ingreso Producto", self.agregar_producto, "#2ecc71", 0)
-        self.crear_boton(button_frame, "Agregar Stock", self.agregar_stock, "#9b59b6", 1)
-        self.crear_boton(button_frame, "Retirar", self.retirar_producto, "#e74c3c", 2)
-        self.crear_boton(button_frame, "Eliminar", self.eliminar_producto, "#e67e22", 4)
-        self.crear_boton(button_frame, "Buscar", self.buscar_producto, "#3498db", 5)
-
+        self.crear_boton(button_frame, "Agregar", self.agregar_producto, "#2ecc71", 0)
+        self.crear_boton(button_frame, "Retirar", self.retirar_producto, "#e74c3c", 1)
+        self.crear_boton(button_frame, "Buscar", self.buscar_producto, "#3498db", 2)
+        self.crear_boton(button_frame, "Eliminar", self.eliminar_producto, "#e67e22", 3)
+        self.crear_boton(button_frame, "Compactar", self.compactar_hoja, "#9b59b6", 4)
+        
         # Crear tabla de visualización
         table_frame = tk.LabelFrame(main_frame, text="Inventario Actual", bg="#f0f0f0", font=("Arial", 12))
         table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -127,15 +119,9 @@ class InventarioApp:
         # Evento de selección de la tabla
         self.tree.bind("<ButtonRelease-1>", self.seleccionar_item)
     
-    # Crear campos de entrada
     def crear_campo(self, parent, texto, variable, fila):
-        tk.Label(parent, text=texto, bg="#f0f0f0", font=("Arial", 12)).grid(row=fila, column=0, padx=10, pady=5, sticky="w")
-        tk.Entry(parent, textvariable=variable, font=("Arial", 12), width=30).grid(row=fila, column=1, padx=10, pady=5, sticky="w")
-    
-    # Crear campo de búsqueda
-    def crear_campo_busqueda(self, parent, texto, variable, fila):
-        tk.Label(parent, text=texto, bg="#f0f0f0", font=("Arial", 12)).grid(row=fila, column=0, padx=10, pady=5, sticky="w")
-        tk.Entry(parent, textvariable=variable, font=("Arial", 12), width=30).grid(row=fila, column=1, padx=10, pady=5, sticky="w")
+        tk.Label(parent, text=texto, bg="#f0f0f0", font=("Arial", 10)).grid(row=fila, column=0, padx=10, pady=5, sticky="w")
+        tk.Entry(parent, textvariable=variable, font=("Arial", 10), width=30).grid(row=fila, column=1, padx=10, pady=5, sticky="w")
     
     def crear_boton(self, parent, texto, comando, color, columna):
         tk.Button(
@@ -143,9 +129,9 @@ class InventarioApp:
             text=texto, 
             command=comando, 
             bg=color, 
-            fg="black", 
+            fg="white", 
             font=("Arial", 10, "bold"),
-            width=14,
+            width=12,
             height=2,
             relief=tk.RAISED
         ).grid(row=0, column=columna, padx=5, pady=5)
@@ -159,17 +145,16 @@ class InventarioApp:
         self.cantidad_var.set("")
     
     def actualizar_tabla(self):
-
         # Limpiar tabla existente
         for item in self.tree.get_children():
             self.tree.delete(item)
         
         try:
             # Cargar datos desde Excel
-            df = pd.read_excel(self.archivo_excel)
+            tabla_excel = pd.read_excel(self.archivo_excel)
             
             # Agregar datos a la tabla
-            for index, row in df.iterrows():
+            for index, row in tabla_excel.iterrows():
                 self.tree.insert("", tk.END, values=(
                     row.get("ID", ""), 
                     row.get("Descripción", ""), 
@@ -189,28 +174,27 @@ class InventarioApp:
             valores = item['values']
             
             # Actualizar los campos con los valores seleccionados
-            self.id_buscar_var.set(valores[0])
+            self.id_var.set(valores[0])
             self.descripcion_var.set(valores[1])
             self.serie_var.set(valores[2])
             self.observaciones_var.set(valores[3])
             self.lugar_var.set(valores[4])
             self.cantidad_var.set(valores[5])
     
-    # Validar datos de entrada
     def validar_datos(self):
         
         # Validar que no haya campos vacíos
-        if not self.serie_var or not self.cantidad_var or not self.descripcion_var.get().strip() or not self.lugar_var.get().strip():
-           messagebox.showwarning("Advertencia", "El campo los campos son obligatorios.")
+        if not self.id_var or not self.serie_var or not self.cantidad_var or not self.descripcion_var or not self.lugar_var:
+           messagebox.showwarning("Advertencia", "El campo Descripción es obligatorio.")
            return False
         
         # Validar que ID, Serie y Cantidad sean enteros
-        if not isinstance(self.serie_var.get(), int) or not isinstance(self.cantidad_var.get(), int):
-            messagebox.showwarning( "Advertencia","Serie y Cantidad deben ser números enteros.")
+        if not isinstance(self.id_var, int) or not isinstance(self.serie_var, int) or not isinstance(self.cantidad_var, int):
+            messagebox.showwarning( f"ID ==>{self.id_var}, Serie ==>{self.serie_var} y Cantidad ==>{self.cantidad_var} deben ser números enteros.")
             return False
-
+        
         # Validar que Descripción y Lugar sean strings
-        if not isinstance(self.descripcion_var.get(), str) or not isinstance(self.lugar_var.get(), str):
+        if not isinstance(self.descripcion_var, str) or not isinstance(self.lugar_var, str):
             messagebox.showwarning("Descripción y Lugar deben ser texto.")
             return False
         
@@ -226,34 +210,15 @@ class InventarioApp:
         
         return True
     
-    # Validar datos de búsqueda
-    def validar_datos_busqueda(self):
-        # Validar que no haya campos vacíos
-        if not self.id_buscar_var.get():
-            messagebox.showwarning("Advertencia", "El campo ID es obligatorio.")
-            return False
-        
-        # Validar que ID sea un entero
-        try:
-            id_producto = int(self.id_buscar_var.get())
-            if id_producto <= 0:
-                messagebox.showwarning("Advertencia", "El ID debe ser un número entero positivo.")
-                return False
-        except ValueError:
-            messagebox.showwarning("Advertencia", "El ID debe ser un número entero.")
-            return False
-        
-        return True
-    
-    # Agregar producto nuevo o actualizar cantidad
     def agregar_producto(self):
 
+        # sino son datos validos termina operacion
         if not self.validar_datos():
             return
         
         try:
-            id_producto = int(self.crear_id())
-            cantidad = int(self.cantidad_var.get())
+            id_producto = self.id_var.get().strip()
+            cantidad = self.cantidad_var.get()
             
             # Cargar datos actuales
             tabla_excel = pd.read_excel(self.archivo_excel)
@@ -289,31 +254,35 @@ class InventarioApp:
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo agregar el producto: {str(e)}")
     
-    # Retirar producto osea cantidad de stock
     def retirar_producto(self):
 
-        if not self.validar_datos_busqueda():
+        if not self.id_var.get():
+            messagebox.showwarning("Advertencia", "Debe especificar un ID para retirar producto.")
             return
             
         try:
-            id_producto = int(self.id_buscar_var.get())
+            #id de producto entero sin espacios
+            id_producto = self.id_var.get()
             
             # Cargar datos actuales
             tabla_excel = pd.read_excel(self.archivo_excel)
             
-            # Verificar si el producto existe
+            # Verificar si el producto existe, devuele dataframe
             producto_existente = tabla_excel[tabla_excel["ID"] == id_producto]
             
+            # Tiene que tener algo mayor a cero
             if len(producto_existente) > 0:
                 indice = tabla_excel[tabla_excel["ID"] == id_producto].index[0]
                 cantidad_actual = int(tabla_excel.at[indice, "Cantidad"])
                 
                 # Solicitar cantidad a retirar
-                cantidad_retirar = simpledialog.askinteger(f"Cantidad actual {cantidad_actual}", "Ingrese la cantidad a retirar:", minvalue=1)
+                cantidad_retirar = simpledialog.askinteger("Retirar", "Ingrese la cantidad a retirar:", minvalue=1)
                 
+                # Se asegurar que la cantidad sea none
                 if cantidad_retirar is None:
                     return
                 
+                # si la cantidad_retirar es mayor a la actual termina
                 if cantidad_retirar > cantidad_actual:
                     messagebox.showwarning("Advertencia", f"No hay suficiente cantidad disponible. Disponible: {cantidad_actual}")
                     return
@@ -338,154 +307,103 @@ class InventarioApp:
                 
         except Exception as e:
             messagebox.showerror("Error", f"No se pudo retirar el producto: {str(e)}")
-
-    def agregar_stock(self):
-
-        if not self.validar_datos_busqueda():
-            return
-            
-        try:
-            id_producto = int(self.id_buscar_var.get())
-            
-            # Cargar datos actuales
-            tabla_excel = pd.read_excel(self.archivo_excel)
-            
-            # Buscar producto
-            producto = tabla_excel[tabla_excel["ID"] == id_producto]
-            
-            if len(producto) > 0:
-                indice = tabla_excel[tabla_excel["ID"] == id_producto].index[0]
-                cantidad_actual = int(tabla_excel.at[indice, "Cantidad"])
-                
-                # Solicitar cantidad a retirar
-                cantidad_agregar = simpledialog.askinteger(f"Cantidad actual {cantidad_actual}", "Ingrese la cantidad a retirar:", minvalue=1)
-                
-                if cantidad_agregar is None and not isinstance(cantidad_agregar, int):
-                    messagebox.showwarning("Advertencia", f"No se ingresó una cantidad válida, { cantidad_agregar } debe ser un número entero.")
-                    return
-                
-                # Actualizar cantidad
-                nueva_cantidad = cantidad_actual + cantidad_agregar
-                tabla_excel.at[indice, "Cantidad"] = nueva_cantidad
-                
-                if nueva_cantidad == 0:
-                    resultado = messagebox.askyesno("Confirmar", "La cantidad ha llegado a cero. ¿Desea eliminar el producto del inventario?")
-                    if resultado:
-                        tabla_excel = tabla_excel.drop(indice)
-                
-                # Guardar cambios
-                tabla_excel.to_excel(self.archivo_excel, index=False)
-                
-                messagebox.showinfo("Éxito", f"Se retiraron {cantidad_agregar} unidades del producto {id_producto}.")
-                self.actualizar_tabla()
-                self.limpiar_campos()
-            else:
-                messagebox.showwarning("No encontrado", f"El producto con ID {id_producto} no existe en el inventario.")
-                
-        except Exception as e:
-            messagebox.showerror("Error", f"No se pudo retirar el producto: {str(e)}")
     
     def buscar_producto(self):
-
-        if not self.validar_datos_busqueda():
-            return
+            pass
+        # #se asegurar que el campo no este vacio
+        # if not self.id_var.get().strip():
+        #     messagebox.showwarning("Advertencia", "Debe especificar un ID para buscar.")
+        #     return
             
-        try:
-            id_producto = int(self.id_buscar_var.get())
+        # try:
+        #     id_producto = self.id_var.get().strip()
             
-            # Cargar datos actuales
-            tabla_excel = pd.read_excel(self.archivo_excel)
+        #     # Cargar datos actuales
+        #     tabla_excel = pd.read_excel(self.archivo_excel)
             
-            # Buscar producto
-            producto = tabla_excel[tabla_excel["ID"] == id_producto]
+        #     # Buscar producto
+        #     producto = tabla_excel[tabla_excel["ID"] == id_producto]
             
-            if len(producto) > 0:
-                # Seleccionar en la tabla
-                for item in self.tree.get_children():
-                    valores = self.tree.item(item, "values")
-                    if valores[0] == id_producto:
-                        self.tree.selection_set(item)
-                        self.tree.focus(item)
-                        self.tree.see(item)
-                        break
-
-                messagebox.showinfo("Encontrado", f"Producto {id_producto} encontrado\nDescripción: {producto.iloc[0]['Descripción']}\nSerie: {producto.iloc[0]['Serie']}\nObservaciones: {producto.iloc[0]['Observaciones']}\nLugar: {producto.iloc[0]['Lugar']}\nCantidad: {producto.iloc[0]['Cantidad']}")
+        #     if len(producto) > 0:
+        #         # Seleccionar en la tabla
+        #         for item in self.tree.get_children():
+        #             valores = self.tree.item(item, "values")
+        #             if valores[0] == id_producto:
+        #                 self.tree.selection_set(item)
+        #                 self.tree.focus(item)
+        #                 self.tree.see(item)
+        #                 break
                 
-            else:
-                messagebox.showinfo("No encontrado", f"El producto con ID {id_producto} no existe en el inventario.")
+        #         # Actualizar campos
+        #         fila = producto.iloc[0]
+        #         self.id_var.set(fila["ID"])
+        #         self.descripcion_var.set(fila["Descripción"])
+        #         self.serie_var.set(fila["Serie"])
+        #         self.observaciones_var.set(fila["Observaciones"])
+        #         self.lugar_var.set(fila["Lugar"])
+        #         self.cantidad_var.set(str(fila["Cantidad"]))
                 
-        except Exception as e:
-            messagebox.showerror("Error", f"Error al buscar el producto: {str(e)}")
+        #         messagebox.showinfo("Encontrado", f"Producto {id_producto} encontrado.")
+        #     else:
+        #         messagebox.showinfo("No encontrado", f"El producto con ID {id_producto} no existe en el inventario.")
+                
+        # except Exception as e:
+        #     messagebox.showerror("Error", f"Error al buscar el producto: {str(e)}")
     
     def eliminar_producto(self):
-
-        if not self.validar_datos_busqueda():
-            return
+            pass
+        # if not self.id_var.get().strip():
+        #     messagebox.showwarning("Advertencia", "Debe especificar un ID para eliminar.")
+        #     return
             
-        try:
-            id_producto = int(self.id_buscar_var.get())
+        # try:
+        #     id_producto = self.id_var.get().strip()
             
-            # Cargar datos actuales
-            tabla_excel = pd.read_excel(self.archivo_excel)
+        #     # Confirmación
+        #     confirmacion = messagebox.askyesno("Confirmar eliminación", 
+        #                                        f"¿Está seguro de eliminar el producto con ID {id_producto}?")
+        #     if not confirmacion:
+        #         return
             
-            # Buscar producto
-            producto = tabla_excel[tabla_excel["ID"] == id_producto]
+        #     # Cargar datos actuales
+        #     tabla_excel = pd.read_excel(self.archivo_excel)
             
-            if len(producto) > 0:
-
-                # Confirmación
-                confirmacion = messagebox.askyesno("Confirmar eliminación", 
-                                               f"¿Está seguro de eliminar el producto con ID {id_producto}?")
-                if not confirmacion:
-                    return
-
-                # Eliminar producto
-                tabla_excel = tabla_excel[tabla_excel["ID"] != id_producto]
+        #     # Verificar si el producto existe
+        #     producto_existente = tabla_excel[tabla_excel["ID"] == id_producto]
+            
+        #     if len(producto_existente) > 0:
+        #         # Eliminar producto
+        #         tabla_excel = tabla_excel[tabla_excel["ID"] != id_producto]
                 
-                # Guardar cambios
-                tabla_excel.to_excel(self.archivo_excel, index=False)
+        #         # Guardar cambios
+        #         tabla_excel.to_excel(self.archivo_excel, index=False)
                 
-                messagebox.showinfo("Éxito", f"Producto {id_producto} eliminado correctamente.")
-                self.actualizar_tabla()
-                self.limpiar_campos()
-            else:
-                messagebox.showinfo("No encontrado", f"El producto con ID {id_producto} no existe en el inventario.")
+        #         messagebox.showinfo("Éxito", f"Producto {id_producto} eliminado correctamente.")
+        #         self.actualizar_tabla()
+        #         self.limpiar_campos()
+        #     else:
+        #         messagebox.showinfo("No encontrado", f"El producto con ID {id_producto} no existe en el inventario.")
                 
-        except Exception as e:
-            messagebox.showerror("Error", f"Error al eliminar el producto: {str(e)}")
+        # except Exception as e:
+        #     messagebox.showerror("Error", f"Error al eliminar el producto: {str(e)}")
     
-    #esta funcion va a crear un archivo para los ids
     def compactar_hoja(self):
-        try:
-            # Cargar datos actuales
-            df = pd.read_excel(self.archivo_excel)
+        pass
+    #     try:
+    #         # Cargar datos actuales
+    #         df = pd.read_excel(self.archivo_excel)
             
-            # Eliminar filas vacías
-            df_compacto = df.dropna(how='all')
+    #         # Eliminar filas vacías
+    #         df_compacto = df.dropna(how='all')
             
-            # Guardar cambios
-            df_compacto.to_excel(self.archivo_excel, index=False)
+    #         # Guardar cambios
+    #         df_compacto.to_excel(self.archivo_excel, index=False)
             
-            messagebox.showinfo("Éxito", "Hoja compactada correctamente.")
-            self.actualizar_tabla()
+    #         messagebox.showinfo("Éxito", "Hoja compactada correctamente.")
+    #         self.actualizar_tabla()
             
-        except Exception as e:
-            messagebox.showerror("Error", f"Error al compactar la hoja: {str(e)}")
-
-    def crear_id(self):
-        try:
-            # Cargar datos actuales
-            df = pd.read_excel(self.archivo_excel)
-            
-            # Generar nuevo ID
-            if df.empty:
-                nuevo_id = 1
-            else:
-                nuevo_id = df["ID"].max() + 1
-            
-            return nuevo_id
-        except Exception as e:
-            messagebox.showerror("Error", f"Error al generar ID: {str(e)}")
+    #     except Exception as e:
+    #         messagebox.showerror("Error", f"Error al compactar la hoja: {str(e)}")
 
 def main():
     root = tk.Tk()

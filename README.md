@@ -10,3 +10,7 @@ Antes de comenzar, asegúrate de tener Python instalado en tu sistema. Luego, pu
 pip install pyinstaller
 pip install pandas
 pip install openpyxl
+
+#ejecutado en windows
+pyinstaller --onefile --windowed --icon=Doom.ico --name "Inventario Sistemas" inventario_system.py
+
